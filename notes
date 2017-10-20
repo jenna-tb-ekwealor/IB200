@@ -1,0 +1,766 @@
+#checked quality with fastqc
+
+#trimmed to 100 bp, #Q33 for Sanger quaity score conversion
+$ ./bin/fastx_trimmer -f 1 -l 100 -i tort_all_combined.fastq -o tort_all_combined_100bp_trimmed.fastq -Q33
+
+#checked quality with fastqc
+FastQC tort_all_combined_100bp_trimmed.fastq -o fastqc/
+
+#quality filter
+fastq_quality_filter -v -q 30 -p 90 -i tort_all_combined_100bp_trimmed.fastq -o tort_all_combined_100_q30_90.fastq -Q33
+
+# convert to fasta 
+fastq_to_fasta -i tort_all_combined_100_q30_90.fastq -o tort_all_combined_100_q30_90.fasta -v -Q33
+
+# make catalog
+
+
+# removed barcodes (try with fasta files)
+
+
+
+# for installing stacks
+./configure --enable-bam \
+              --with-bam-include-path=/Users/jennabaughman/samtools-0.1.19 \
+              --with-bam-lib-path=/Users/jennabaughman/samtools-0.1.19 \
+          	  --disable-openmp
+
+
+
+#digest with EcoRI and MseI, both plus and minus strand
+
+read_fasta -i NC_005087.fna | digest_seq -p GAATTC -c 1 | digest_seq -p TTAA -c 1 | write_fasta --data_out=/Users/jennabaughman/Documents/berkeley/spring_2016/ib_200/project/Physcomitrella_patens/fna/digested/NC_005087_EcoRI_MseI.fasta --no_stream
+
+read_fasta -i NC_005087.fna | reverse_seq | complement_seq |digest_seq -p GAATTC -c 1 | digest_seq -p TTAA -c 1 | write_fasta --data_out=/Users/jennabaughman/Documents/berkeley/spring_2016/ib_200/project/Physcomitrella_patens/fna/digested/NC_005087_EcoRI_MseI_RC.fasta --no_stream
+
+
+#combine digested forward and reverse strand digested files
+
+cat /Users/jennabaughman/Documents/berkeley/spring_2016/ib_200/project/Physcomitrella_patens/fna/digested/NC_005087_EcoRI_MseI.fasta /Users/jennabaughman/Documents/berkeley/spring_2016/ib_200/project/Physcomitrella_patens/fna/digested/NC_005087_EcoRI_MseI_RC.fasta > /Users/jennabaughman/Documents/berkeley/spring_2016/ib_200/project/Physcomitrella_patens/fna/digested/NC_005087_EcoRI_MseI_comb.fasta
+
+#size selection 
+read_fasta -i NC_005087_EcoRI_MseI_comb.fasta | grab -e 'SEQ_LEN > 250' | grab -e 'SEQ_LEN < 500' | write_fasta --data_out=/Users/jennabaughman/Documents/berkeley/spring_2016/ib_200/project/Physcomitrella_patens/fna/digested/size_selection/NC_005087_EcoRI_MseI_comb_250_500.fasta
+
+#count records as a check
+read_fasta -i NC_005087_EcoRI_MseI_comb.fasta | count_records
+read_fasta -i size_selection/NC_005087_EcoRI_MseI_comb_250_500.fasta | count_records
+
+
+
+############
+
+GO TO "Physcomitrella patens" 
+
+#combine plastid files
+cat fna/NC_005087.fna fna/NC_007945.fna > fna/pp_plastids.fasta
+
+#digest with EcoRI and MseI, both plus and minus strand
+
+read_fasta -i fna/pp_plastids.fasta | digest_seq -p GAATTC -c 1 | digest_seq -p TTAA -c 1 | write_fasta --data_out=fna/digested/pp_plastids_EcoRI_MseI.fasta --no_stream
+
+read_fasta -i fna/pp_plastids.fasta | reverse_seq | complement_seq |digest_seq -p GAATTC -c 1 | digest_seq -p TTAA -c 1 | write_fasta --data_out=fna/digested/pp_plastids_EcoRI_MseI_RC.fasta --no_stream
+
+#combine forward and reverse strand digested files 
+cat fna/digested/pp_plastids_EcoRI_MseI.fasta fna/digested/pp_plastids_EcoRI_MseI_RC.fasta > fna/digested/pp_plastids_EcoRI_MseI_full.fasta
+
+#fna/digested/pp_plastids_EcoRI_MseI_full.fasta
+
+#size selection 
+read_fasta -i fna/digested/pp_plastids_EcoRI_MseI_full.fasta | grab -e 'SEQ_LEN > 250' | grab -e 'SEQ_LEN < 500' | write_fasta --data_out=fna/digested/size_selection/pp_plastids_EcoRI_MseI_full_250_500.fasta --no_stream
+
+#to combine all scaffold files into one and repeat ddradseq processes for whole genome!
+for file in fna/NZ_ABEU00000000.scaffold.fna/*.fna; do cat $file >> fna/NZ_ABEU00000000.scaffold.fna/pp_genome.fasta; done
+
+#digest with EcoRI and MseI, both plus and minus strand
+
+read_fasta -i fna/NZ_ABEU00000000.scaffold.fna/pp_genome.fasta | digest_seq -p GAATTC -c 1 | digest_seq -p TTAA -c 1 | write_fasta --data_out=fna/NZ_ABEU00000000.scaffold.fna/digested/pp_genome_EcoRI_MseI.fasta --no_stream
+
+read_fasta -i fna/NZ_ABEU00000000.scaffold.fna/pp_genome.fasta | reverse_seq | complement_seq |digest_seq -p GAATTC -c 1 | digest_seq -p TTAA -c 1 | write_fasta --data_out=fna/NZ_ABEU00000000.scaffold.fna/digested/pp_genome_EcoRI_MseI_RC.fasta --no_stream
+
+#combine forward and reverse strand digested files 
+cat fna/NZ_ABEU00000000.scaffold.fna/digested/pp_genome_EcoRI_MseI.fasta fna/NZ_ABEU00000000.scaffold.fna/digested/pp_genome_EcoRI_MseI_RC.fasta > fna/NZ_ABEU00000000.scaffold.fna/digested/pp_genome_EcoRI_MseI_full.fasta 
+#fna/NZ_ABEU00000000.scaffold.fna/digested/pp_genome_EcoRI_MseI_full.fasta
+
+#size selection 
+read_fasta -i fna/NZ_ABEU00000000.scaffold.fna/digested/pp_genome_EcoRI_MseI_full.fasta | grab -e 'SEQ_LEN > 250' | grab -e 'SEQ_LEN < 500' | write_fasta --data_out=fna/NZ_ABEU00000000.scaffold.fna/digested/size_selection/pp_genome_EcoRI_MseI_full_250_500.fasta --no_stream
+
+#combine plastid with nuclear genome
+cat fna/digested/size_selection/pp_plastids_EcoRI_MseI_full_250_500.fasta fna/NZ_ABEU00000000.scaffold.fna/digested/size_selection/pp_genome_EcoRI_MseI_full_250_500.fasta > pp_whole_genome_EcoRI_MseI_full_250_500.fasta
+
+############
+cd /Users/jennabaughman/Documents/berkeley/spring_2016/ib_200/project/Physcomitrella_patens/fna/digested/size_selection
+mkdir ecori
+
+#pp_whole_genome_EcoRI_MseI_full_250_500_cat.fasta
+
+
+#treat AATTC like barcode---find and remove
+read_fasta -i pp_whole_genome_EcoRI_MseI_full_250_500_cat.fasta | find_barcodes -b barcodes.txt -p 0 -m 0 -R | write_fasta_files -d ecori/ -k BARCODE_NAME -x 
+
+#trim to 80 bp after removing cut site
+fastx_trimmer -f 1 -l 80 -i ecori/ecori.fasta -o ecori/pp_ecori_80bp.fasta
+
+
+
+
+
+
+#convert tort samples from fastq to fasta
+# could do with for loop but using this instead 
+fastq_to_fasta -i ht_1_10_b_MID32_dcd.fastq  -o fasta/ht_1_10_b_MID32_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_10_c_ILL_8nt_115_dcd.fastq  -o fasta/ht_1_10_c_ILL_8nt_115_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_11_a_ILL_8nt_116_dcd.fastq  -o fasta/ht_1_11_a_ILL_8nt_116_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_11_b_ILL_8nt_117_dcd.fastq  -o fasta/ht_1_11_b_ILL_8nt_117_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_11_c_ILL_8nt_118_dcd.fastq  -o fasta/ht_1_11_c_ILL_8nt_118_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_1_a_MID1_dcd.fastq  -o fasta/ht_1_1_a_MID1_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_1_b_MID2_dcd.fastq  -o fasta/ht_1_1_b_MID2_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_1_c_MID3_dcd.fastq  -o fasta/ht_1_1_c_MID3_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_2_a_MID4_dcd.fastq  -o fasta/ht_1_2_a_MID4_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_2_b_MID6_dcd.fastq  -o fasta/ht_1_2_b_MID6_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_2_c_ILL_10nt_59_dcd.fastq  -o fasta/ht_1_2_c_ILL_10nt_59_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_3_a_ILL_10nt_6_dcd.fastq  -o fasta/ht_1_3_a_ILL_10nt_6_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_3_b_ILL_10nt_60_dcd.fastq  -o fasta/ht_1_3_b_ILL_10nt_60_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_3_c_ILL_10nt_62_dcd.fastq  -o fasta/ht_1_3_c_ILL_10nt_62_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_4_a_ILL_8nt_78_dcd.fastq  -o fasta/ht_1_4_a_ILL_8nt_78_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_4_b_ILL_8nt_79_dcd.fastq  -o fasta/ht_1_4_b_ILL_8nt_79_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_4_c_ILL_8nt_8_dcd.fastq  -o fasta/ht_1_4_c_ILL_8nt_8_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_5_a_MID16_dcd.fastq  -o fasta/ht_1_5_a_MID16_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_5_b_MID17_dcd.fastq  -o fasta/ht_1_5_b_MID17_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_5_c_MID18_dcd.fastq  -o fasta/ht_1_5_c_MID18_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_6_a_MID19_dcd.fastq  -o fasta/ht_1_6_a_MID19_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_6_b_MID20_dcd.fastq  -o fasta/ht_1_6_b_MID20_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_6_c_ILL_8nt_103_dcd.fastq  -o fasta/ht_1_6_c_ILL_8nt_103_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_7_a_ILL_8nt_104_dcd.fastq  -o fasta/ht_1_7_a_ILL_8nt_104_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_7_b_ILL_8nt_106_dcd.fastq  -o fasta/ht_1_7_b_ILL_8nt_106_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_7_c_ILL_8nt_107_dcd.fastq  -o fasta/ht_1_7_c_ILL_8nt_107_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_8_a_ILL_8nt_89_dcd.fastq  -o fasta/ht_1_8_a_ILL_8nt_89_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_8_b_ILL_8nt_90_dcd.fastq  -o fasta/ht_1_8_b_ILL_8nt_90_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_8_c_ILL_8nt_91_dcd.fastq  -o fasta/ht_1_8_c_ILL_8nt_91_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_9_a_MID28_dcd.fastq  -o fasta/ht_1_9_a_MID28_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_9_b_MID29_dcd.fastq  -o fasta/ht_1_9_b_MID29_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_1_9_c_MID30_dcd.fastq  -o fasta/ht_1_9_c_MID30_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_10_a_MID65_dcd.fastq  -o fasta/ht_2_10_a_MID65_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_10_b_MID66_dcd.fastq  -o fasta/ht_2_10_b_MID66_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_10_c_MID67_dcd.fastq  -o fasta/ht_2_10_c_MID67_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_11_a_MID68_dcd.fastq  -o fasta/ht_2_11_a_MID68_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_11_b_MID69_dcd.fastq  -o fasta/ht_2_11_b_MID69_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_11_c_ILL_8nt_42_dcd.fastq  -o fasta/ht_2_11_c_ILL_8nt_42_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_1_a_ILL_9nt_101_dcd.fastq  -o fasta/ht_2_1_a_ILL_9nt_101_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_1_b_ILL_9nt_102_dcd.fastq  -o fasta/ht_2_1_b_ILL_9nt_102_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_1_c_ILL_9nt_103_dcd.fastq  -o fasta/ht_2_1_c_ILL_9nt_103_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_2_a_MID40_dcd.fastq  -o fasta/ht_2_2_a_MID40_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_2_b_MID41_dcd.fastq  -o fasta/ht_2_2_b_MID41_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_2_c_MID42_dcd.fastq  -o fasta/ht_2_2_c_MID42_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_3_a_MID43_dcd.fastq  -o fasta/ht_2_3_a_MID43_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_3_b_MID44_dcd.fastq  -o fasta/ht_2_3_b_MID44_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_3_c_ILL_8nt_18_dcd.fastq  -o fasta/ht_2_3_c_ILL_8nt_18_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_4_a_ILL_8nt_19_dcd.fastq  -o fasta/ht_2_4_a_ILL_8nt_19_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_4_b_ILL_8nt_2_dcd.fastq  -o fasta/ht_2_4_b_ILL_8nt_2_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_4_c_ILL_8nt_21_dcd.fastq  -o fasta/ht_2_4_c_ILL_8nt_21_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_5_a_ILL_9nt_112_dcd.fastq  -o fasta/ht_2_5_a_ILL_9nt_112_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_5_b_ILL_9nt_113_dcd.fastq  -o fasta/ht_2_5_b_ILL_9nt_113_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_5_c_ILL_9nt_114_dcd.fastq  -o fasta/ht_2_5_c_ILL_9nt_114_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_6_a_MID53_dcd.fastq  -o fasta/ht_2_6_a_MID53_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_6_b_MID54_dcd.fastq  -o fasta/ht_2_6_b_MID54_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_6_c_MID55_dcd.fastq  -o fasta/ht_2_6_c_MID55_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_7_a_MID56_dcd.fastq  -o fasta/ht_2_7_a_MID56_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_7_b_MID57_dcd.fastq  -o fasta/ht_2_7_b_MID57_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_7_c_ILL_8nt_30_dcd.fastq  -o fasta/ht_2_7_c_ILL_8nt_30_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_8_a_ILL_8nt_31_dcd.fastq  -o fasta/ht_2_8_a_ILL_8nt_31_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_8_b_ILL_8nt_32_dcd.fastq  -o fasta/ht_2_8_b_ILL_8nt_32_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_8_c_ILL_8nt_33_dcd.fastq  -o fasta/ht_2_8_c_ILL_8nt_33_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_9_a_ILL_9nt_15_dcd.fastq  -o fasta/ht_2_9_a_ILL_9nt_15_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_9_b_ILL_9nt_16_dcd.fastq  -o fasta/ht_2_9_b_ILL_9nt_16_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_2_9_c_ILL_9nt_17_dcd.fastq  -o fasta/ht_2_9_c_ILL_9nt_17_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_10_a_ILL_9nt_5_dcd.fastq  -o fasta/ht_3_10_a_ILL_9nt_5_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_10_b_ILL_9nt_50_dcd.fastq  -o fasta/ht_3_10_b_ILL_9nt_50_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_10_c_ILL_9nt_51_dcd.fastq  -o fasta/ht_3_10_c_ILL_9nt_51_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_11_a_ILL_8nt_80_dcd.fastq  -o fasta/ht_3_11_a_ILL_8nt_80_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_11_b_ILL_14nt_1_dcd.fastq  -o fasta/ht_3_11_b_ILL_14nt_1_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_11_c_ILL_14nt_23_dcd.fastq  -o fasta/ht_3_11_c_ILL_14nt_23_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_1_a_ILL_8nt_43_dcd.fastq  -o fasta/ht_3_1_a_ILL_8nt_43_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_1_b_ILL_8nt_44_dcd.fastq  -o fasta/ht_3_1_b_ILL_8nt_44_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_1_c_ILL_8nt_45_dcd.fastq  -o fasta/ht_3_1_c_ILL_8nt_45_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_2_a_ILL_9nt_28_dcd.fastq  -o fasta/ht_3_2_a_ILL_9nt_28_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_2_b_ILL_9nt_29_dcd.fastq  -o fasta/ht_3_2_b_ILL_9nt_29_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_2_c_ILL_9nt_3_dcd.fastq  -o fasta/ht_3_2_c_ILL_9nt_3_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_3_a_MID77_dcd.fastq  -o fasta/ht_3_3_a_MID77_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_3_b_MID78_dcd.fastq  -o fasta/ht_3_3_b_MID78_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_3_c_MID79_dcd.fastq  -o fasta/ht_3_3_c_MID79_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_4_a_MID80_dcd.fastq  -o fasta/ht_3_4_a_MID80_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_4_b_MID81_dcd.fastq  -o fasta/ht_3_4_b_MID81_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_4_c_ILL_8nt_53_dcd.fastq  -o fasta/ht_3_4_c_ILL_8nt_53_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_5_a_ILL_8nt_54_dcd.fastq  -o fasta/ht_3_5_a_ILL_8nt_54_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_5_b_ILL_8nt_55_dcd.fastq  -o fasta/ht_3_5_b_ILL_8nt_55_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_5_c_ILL_8nt_57_dcd.fastq  -o fasta/ht_3_5_c_ILL_8nt_57_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_6_a_ILL_9nt_39_dcd.fastq  -o fasta/ht_3_6_a_ILL_9nt_39_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_6_b_ILL_9nt_4_dcd.fastq  -o fasta/ht_3_6_b_ILL_9nt_4_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_6_c_ILL_9nt_40_dcd.fastq  -o fasta/ht_3_6_c_ILL_9nt_40_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_7_a_MID89_dcd.fastq  -o fasta/ht_3_7_a_MID89_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_7_b_MID90_dcd.fastq  -o fasta/ht_3_7_b_MID90_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_7_c_MID91_dcd.fastq  -o fasta/ht_3_7_c_MID91_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_8_a_MID92_dcd.fastq  -o fasta/ht_3_8_a_MID92_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_8_b_MID93_dcd.fastq  -o fasta/ht_3_8_b_MID93_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_8_c_ILL_8nt_67_dcd.fastq  -o fasta/ht_3_8_c_ILL_8nt_67_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_9_a_ILL_8nt_68_dcd.fastq  -o fasta/ht_3_9_a_ILL_8nt_68_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_9_b_ILL_8nt_69_dcd.fastq  -o fasta/ht_3_9_b_ILL_8nt_69_dcd.fasta -v -Q33
+fastq_to_fasta -i ht_3_9_c_ILL_8nt_7_dcd.fastq  -o fasta/ht_3_9_c_ILL_8nt_7_dcd.fasta -v -Q33
+fastq_to_fasta -i p_1_1_a_ILL_14nt_47_dcd.fastq  -o fasta/p_1_1_a_ILL_14nt_47_dcd.fasta -v -Q33
+fastq_to_fasta -i p_1_1_b_ILL_14nt_77_dcd.fastq  -o fasta/p_1_1_b_ILL_14nt_77_dcd.fasta -v -Q33
+fastq_to_fasta -i p_1_1_c_ILL_14nt_18_dcd.fastq  -o fasta/p_1_1_c_ILL_14nt_18_dcd.fasta -v -Q33
+fastq_to_fasta -i p_1_7_a_ILL_9nt_18_dcd.fastq  -o fasta/p_1_7_a_ILL_9nt_18_dcd.fasta -v -Q33
+fastq_to_fasta -i p_1_7_b_ILL_14nt_11_dcd.fastq  -o fasta/p_1_7_b_ILL_14nt_11_dcd.fasta -v -Q33
+fastq_to_fasta -i p_1_7_c_ILL_14nt_31_dcd.fastq  -o fasta/p_1_7_c_ILL_14nt_31_dcd.fasta -v -Q33
+fastq_to_fasta -i p_2_1_a_ILL_14nt_61_dcd.fastq  -o fasta/p_2_1_a_ILL_14nt_61_dcd.fasta -v -Q33
+fastq_to_fasta -i p_2_1_b_ILL_14nt_92_dcd.fastq  -o fasta/p_2_1_b_ILL_14nt_92_dcd.fasta -v -Q33
+fastq_to_fasta -i p_2_1_c_ILL_14nt_70_dcd.fastq  -o fasta/p_2_1_c_ILL_14nt_70_dcd.fasta -v -Q33
+fastq_to_fasta -i p_2_2_a_ILL_8nt_92_dcd.fastq  -o fasta/p_2_2_a_ILL_8nt_92_dcd.fasta -v -Q33
+fastq_to_fasta -i p_2_2_b_ILL_14nt_4_dcd.fastq  -o fasta/p_2_2_b_ILL_14nt_4_dcd.fasta -v -Q33
+fastq_to_fasta -i p_2_2_c_ILL_14nt_24_dcd.fastq  -o fasta/p_2_2_c_ILL_14nt_24_dcd.fasta -v -Q33
+fastq_to_fasta -i p_2_3_b_ILL_14nt_78_dcd.fastq  -o fasta/p_2_3_b_ILL_14nt_78_dcd.fasta -v -Q33
+fastq_to_fasta -i p_2_3_c_ILL_14nt_35_dcd.fastq  -o fasta/p_2_3_c_ILL_14nt_35_dcd.fasta -v -Q33
+fastq_to_fasta -i p_2_3_q_ILL_14nt_51_dcd.fastq  -o fasta/p_2_3_q_ILL_14nt_51_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_1_a_ILL_9nt_30_dcd.fastq  -o fasta/p_3_1_a_ILL_9nt_30_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_1_b_ILL_14nt_15_dcd.fastq  -o fasta/p_3_1_b_ILL_14nt_15_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_1_c_ILL_14nt_32_dcd.fastq  -o fasta/p_3_1_c_ILL_14nt_32_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_2_a_ILL_14nt_66_dcd.fastq  -o fasta/p_3_2_a_ILL_14nt_66_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_2_b_ILL_14nt_96_dcd.fastq  -o fasta/p_3_2_b_ILL_14nt_96_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_2_c_ILL_14nt_83_dcd.fastq  -o fasta/p_3_2_c_ILL_14nt_83_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_3_a_ILL_9nt_104_dcd.fastq  -o fasta/p_3_3_a_ILL_9nt_104_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_3_b_ILL_14nt_5_dcd.fastq  -o fasta/p_3_3_b_ILL_14nt_5_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_3_c_ILL_14nt_27_dcd.fastq  -o fasta/p_3_3_c_ILL_14nt_27_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_4_a_ILL_14nt_53_dcd.fastq  -o fasta/p_3_4_a_ILL_14nt_53_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_4_b_ILL_14nt_80_dcd.fastq  -o fasta/p_3_4_b_ILL_14nt_80_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_4_c_ILL_14nt_44_dcd.fastq  -o fasta/p_3_4_c_ILL_14nt_44_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_5_a_ILL_9nt_41_dcd.fastq  -o fasta/p_3_5_a_ILL_9nt_41_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_5_b_ILL_14nt_17_dcd.fastq  -o fasta/p_3_5_b_ILL_14nt_17_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_5_c_ILL_14nt_34_dcd.fastq  -o fasta/p_3_5_c_ILL_14nt_34_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_6_a_ILL_14nt_69_dcd.fastq  -o fasta/p_3_6_a_ILL_14nt_69_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_6_b_ILL_14nt_2_dcd.fastq  -o fasta/p_3_6_b_ILL_14nt_2_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_6_c_ILL_14nt_94_dcd.fastq  -o fasta/p_3_6_c_ILL_14nt_94_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_7_a_ILL_9nt_115_dcd.fastq  -o fasta/p_3_7_a_ILL_9nt_115_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_7_b_ILL_14nt_6_dcd.fastq  -o fasta/p_3_7_b_ILL_14nt_6_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_7_c_ILL_14nt_30_dcd.fastq  -o fasta/p_3_7_c_ILL_14nt_30_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_8_a_ILL_14nt_56_dcd.fastq  -o fasta/p_3_8_a_ILL_14nt_56_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_8_b_ILL_14nt_87_dcd.fastq  -o fasta/p_3_8_b_ILL_14nt_87_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_8_c_ILL_14nt_57_dcd.fastq  -o fasta/p_3_8_c_ILL_14nt_57_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_9_a_ILL_9nt_52_dcd.fastq  -o fasta/p_3_9_a_ILL_9nt_52_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_9_b_ILL_14nt_20_dcd.fastq  -o fasta/p_3_9_b_ILL_14nt_20_dcd.fasta -v -Q33
+fastq_to_fasta -i p_3_9_c_ILL_14nt_43_dcd.fastq  -o fasta/p_3_9_c_ILL_14nt_43_dcd.fasta -v -Q33
+
+
+denovo_map.pl -p path -r path [-s path] -o path [-t] [-m min_cov] [-M mismatches] [-n mismatches] [-T num_threads] [-A type] [-O popmap] [-B db -b batch_id -D "desc"] [-S -i num] [-e path] [-d] [-h]
+    p: path to a FASTQ/FASTA file containing parent sequences from a mapping cross.
+    r: path to a FASTQ/FASTA file containing progeny sequences from a mapping cross.
+    s: path to a FASTQ/FASTA file containing an individual sample from a population.
+    o: path to write pipeline output files.
+    A: if processing a genetic map, specify the cross type, 'CP', 'F2', 'BC1', 'DH', or 'GEN'.
+    O: if analyzing one or more populations, specify a pOpulation map.
+    T: specify the number of threads to execute.
+    e: executable path, location of pipeline programs.
+    d: perform a dry run. Do not actually execute any programs, just print what would be executed.
+    h: display this help message.
+
+  Stack assembly options:
+    m: specify a minimum number of identical, raw reads required to create a stack.
+    P: specify a minimum number of identical, raw reads required to create a stack in 'progeny' individuals.
+    M: specify the number of mismatches allowed between loci when processing a single individual (default 2).
+    N: specify the number of mismatches allowed when aligning secondary reads to primary stacks (default M+2).
+    n: specify the number of mismatches allowed between loci when building the catalog (default 1).
+    t: remove, or break up, highly repetitive RAD-Tags in the ustacks program.
+    H: disable calling haplotypes from secondary reads.
+
+  Database options:
+    b: batch ID representing this dataset.
+    B: specify a database to load data into.
+    D: batch description.
+    a: batch run date, yyyy-mm-dd, if not provided, current date will be used.
+    S: disable recording SQL data in the database.
+    i: starting sample_id, this is determined automatically if database interaction is enabled.
+
+  SNP Model Options (these options are passed on to ustacks):
+    --bound_low <num>: lower bound for epsilon, the error rate, between 0 and 1.0 (default 0).
+    --bound_high <num>: upper bound for epsilon, the error rate, between 0 and 1.0 (default 1).
+    --alpha <num>: chi square significance level required to call a heterozygote or homozygote, either 0.1, 0.05 (default), 0.01, or 0.001.
+
+  Arbitrary command line options:
+    -X "program:option": pass a command line option to one of the pipeline components, e.g.'-X "ustacks:--max_locus_stacks 4"'.
+
+#denovo_map.pls
+
+#just used the final samples from last time :( to save time. catalog construction failed because physco fragments were different lengths!
+#trim physco to 80bp
+./bin/fastx_trimmer -f 1 -l 80 -i ib200_fasta/pp_whole_genome_EcoRI_MseI_full_250_500_cat.fasta -o ib200_fasta/pp_final_80bp.fasta
+
+#populations to find the radtags to use 
+#RUN 1
+populations -b 1 -P ~/ib200_output/ -M ~/tort_popmap_2_ou.txt -p 2 --phylip --phylip_var --fasta_strict
+#RUN 2
+populations -b 1 -P ~/ib200_output/ -M ~/tort_popmap_1_ou.txt -p 2 --phylip --phylip_var --fasta_strict
+
+
+
+
+
+
+
+
+
+
+
+#################################################
+
+############
+
+GO TO "scani_transcriptome" 
+
+
+#digest with EcoRI and MseI, both plus and minus strand
+
+read_fasta -i Syntrichia_Unigene.fasta | digest_seq -p GAATTC -c 1 | digest_seq -p TTAA -c 1 | write_fasta --data_out=digested/scani_f.fasta --no_stream
+
+read_fasta -i Syntrichia_Unigene.fasta | reverse_seq | complement_seq |digest_seq -p GAATTC -c 1 | digest_seq -p TTAA -c 1 | write_fasta --data_out=digested/scani_r.fasta --no_stream
+
+#combine forward and reverse strand digested files 
+cat digested/scani_f.fasta digested/scani_r.fasta > digested/scani.fasta 
+
+#digested/scani.fasta
+
+#size selection 
+read_fasta -i digested/scani.fasta | grab -e 'SEQ_LEN > 250' | grab -e 'SEQ_LEN < 500' | write_fasta --data_out=digested/size_selection/scani_size.fasta --no_stream
+
+#treat AATTC like barcode---find and remove
+read_fasta -i digested/size_selection/scani_size.fasta | find_barcodes -b barcodes.txt -p 0 -m 0 -R | write_fasta_files -d digested/size_selection/ecori/ -k BARCODE_NAME -x 
+
+#trim to 80 bp after removing cut site
+fastx_trimmer -f 1 -l 80 -i digested/size_selection/ecori/ecori.fasta -o digested/size_selection/ecori/ecori_80bp.fasta
+
+#duplicate ecori_80bp.fasta
+cp digested/size_selection/ecori/ecori_80bp.fasta digested/size_selection/ecori/ecori_80bp_1.fasta 
+cp digested/size_selection/ecori/ecori_80bp.fasta digested/size_selection/ecori/ecori_80bp_2.fasta 
+cp digested/size_selection/ecori/ecori_80bp.fasta digested/size_selection/ecori/ecori_80bp_3.fasta
+cp digested/size_selection/ecori/ecori_80bp.fasta digested/size_selection/ecori/ecori_80bp_4.fasta
+cp digested/size_selection/ecori/ecori_80bp.fasta digested/size_selection/ecori/ecori_80bp_5.fasta
+cat digested/size_selection/ecori/ecori_80bp_2.fasta digested/size_selection/ecori/ecori_80bp_1.fasta digested/size_selection/ecori/ecori_80bp_3.fasta digested/size_selection/ecori/ecori_80bp_4.fasta digested/size_selection/ecori/ecori_80bp_5.fasta > digested/size_selection/ecori/ecori_80bp_cat.fasta 
+
+# copy and change name
+cp digested/size_selection/ecori/ecori_80bp_cat.fasta ~/ib200_fasta/scani_transcriptome.fasta
+
+
+denovo_map.pl -m 4 -M 0 -B jbaughman_ib200_2016_radtags -b 2 -t -D "catalog_transcriptome" -o ~/ib200_output/batch_2/ -s ~/ib200_fasta/ht_1_10_a_MID31_dcd.fasta -s ~/ib200_fasta/ht_1_10_b_MID32_dcd.fasta -s ~/ib200_fasta/ht_1_10_c_ILL_8nt_115_dcd.fasta -s ~/ib200_fasta/ht_1_11_a_ILL_8nt_116_dcd.fasta -s ~/ib200_fasta/ht_1_11_b_ILL_8nt_117_dcd.fasta -s ~/ib200_fasta/ht_1_11_c_ILL_8nt_118_dcd.fasta -s ~/ib200_fasta/ht_1_1_a_MID1_dcd.fasta -s ~/ib200_fasta/ht_1_1_b_MID2_dcd.fasta -s ~/ib200_fasta/ht_1_1_c_MID3_dcd.fasta -s ~/ib200_fasta/ht_1_2_a_MID4_dcd.fasta -s ~/ib200_fasta/ht_1_2_b_MID6_dcd.fasta -s ~/ib200_fasta/ht_1_2_c_ILL_10nt_59_dcd.fasta -s ~/ib200_fasta/ht_1_3_a_ILL_10nt_6_dcd.fasta -s ~/ib200_fasta/ht_1_3_b_ILL_10nt_60_dcd.fasta -s ~/ib200_fasta/ht_1_3_c_ILL_10nt_62_dcd.fasta -s ~/ib200_fasta/ht_1_4_a_ILL_8nt_78_dcd.fasta -s ~/ib200_fasta/ht_1_4_b_ILL_8nt_79_dcd.fasta -s ~/ib200_fasta/ht_1_4_c_ILL_8nt_8_dcd.fasta -s ~/ib200_fasta/ht_1_5_a_MID16_dcd.fasta -s ~/ib200_fasta/ht_1_5_b_MID17_dcd.fasta -s ~/ib200_fasta/ht_1_5_c_MID18_dcd.fasta -s ~/ib200_fasta/ht_1_6_a_MID19_dcd.fasta -s ~/ib200_fasta/ht_1_6_b_MID20_dcd.fasta -s ~/ib200_fasta/ht_1_6_c_ILL_8nt_103_dcd.fasta -s ~/ib200_fasta/ht_1_7_a_ILL_8nt_104_dcd.fasta -s ~/ib200_fasta/ht_1_7_b_ILL_8nt_106_dcd.fasta -s ~/ib200_fasta/ht_1_7_c_ILL_8nt_107_dcd.fasta -s ~/ib200_fasta/ht_1_8_a_ILL_8nt_89_dcd.fasta -s ~/ib200_fasta/ht_1_8_b_ILL_8nt_90_dcd.fasta -s ~/ib200_fasta/ht_1_8_c_ILL_8nt_91_dcd.fasta -s ~/ib200_fasta/ht_1_9_a_MID28_dcd.fasta -s ~/ib200_fasta/ht_1_9_b_MID29_dcd.fasta -s ~/ib200_fasta/ht_1_9_c_MID30_dcd.fasta -s ~/ib200_fasta/ht_2_10_a_MID65_dcd.fasta -s ~/ib200_fasta/ht_2_10_b_MID66_dcd.fasta -s ~/ib200_fasta/ht_2_10_c_MID67_dcd.fasta -s ~/ib200_fasta/ht_2_11_a_MID68_dcd.fasta -s ~/ib200_fasta/ht_2_11_b_MID69_dcd.fasta -s ~/ib200_fasta/ht_2_11_c_ILL_8nt_42_dcd.fasta -s ~/ib200_fasta/ht_2_1_a_ILL_9nt_101_dcd.fasta -s ~/ib200_fasta/ht_2_1_b_ILL_9nt_102_dcd.fasta -s ~/ib200_fasta/ht_2_1_c_ILL_9nt_103_dcd.fasta -s ~/ib200_fasta/ht_2_2_a_MID40_dcd.fasta -s ~/ib200_fasta/ht_2_2_b_MID41_dcd.fasta -s ~/ib200_fasta/ht_2_2_c_MID42_dcd.fasta -s ~/ib200_fasta/ht_2_3_a_MID43_dcd.fasta -s ~/ib200_fasta/ht_2_3_b_MID44_dcd.fasta -s ~/ib200_fasta/ht_2_3_c_ILL_8nt_18_dcd.fasta -s ~/ib200_fasta/ht_2_4_a_ILL_8nt_19_dcd.fasta -s ~/ib200_fasta/ht_2_4_b_ILL_8nt_2_dcd.fasta -s ~/ib200_fasta/ht_2_4_c_ILL_8nt_21_dcd.fasta -s ~/ib200_fasta/ht_2_5_a_ILL_9nt_112_dcd.fasta -s ~/ib200_fasta/ht_2_5_b_ILL_9nt_113_dcd.fasta -s ~/ib200_fasta/ht_2_6_a_MID53_dcd.fasta -s ~/ib200_fasta/ht_2_6_b_MID54_dcd.fasta -s ~/ib200_fasta/ht_2_6_c_MID55_dcd.fasta -s ~/ib200_fasta/ht_2_7_a_MID56_dcd.fasta -s ~/ib200_fasta/ht_2_7_b_MID57_dcd.fasta -s ~/ib200_fasta/ht_2_7_c_ILL_8nt_30_dcd.fasta -s ~/ib200_fasta/ht_2_8_a_ILL_8nt_31_dcd.fasta -s ~/ib200_fasta/ht_2_8_b_ILL_8nt_32_dcd.fasta -s ~/ib200_fasta/ht_2_8_c_ILL_8nt_33_dcd.fasta -s ~/ib200_fasta/ht_2_9_a_ILL_9nt_15_dcd.fasta -s ~/ib200_fasta/ht_2_9_b_ILL_9nt_16_dcd.fasta -s ~/ib200_fasta/ht_2_9_c_ILL_9nt_17_dcd.fasta -s ~/ib200_fasta/ht_3_10_a_ILL_9nt_5_dcd.fasta -s ~/ib200_fasta/ht_3_10_b_ILL_9nt_50_dcd.fasta -s ~/ib200_fasta/ht_3_10_c_ILL_9nt_51_dcd.fasta -s ~/ib200_fasta/ht_3_11_a_ILL_8nt_80_dcd.fasta -s ~/ib200_fasta/ht_3_11_b_ILL_14nt_1_dcd.fasta -s ~/ib200_fasta/ht_3_11_c_ILL_14nt_23_dcd.fasta -s ~/ib200_fasta/ht_3_1_a_ILL_8nt_43_dcd.fasta -s ~/ib200_fasta/ht_3_1_b_ILL_8nt_44_dcd.fasta -s ~/ib200_fasta/ht_3_1_c_ILL_8nt_45_dcd.fasta -s ~/ib200_fasta/ht_3_2_a_ILL_9nt_28_dcd.fasta -s ~/ib200_fasta/ht_3_2_b_ILL_9nt_29_dcd.fasta -s ~/ib200_fasta/ht_3_2_c_ILL_9nt_3_dcd.fasta -s ~/ib200_fasta/ht_3_3_a_MID77_dcd.fasta -s ~/ib200_fasta/ht_3_3_b_MID78_dcd.fasta -s ~/ib200_fasta/ht_3_3_c_MID79_dcd.fasta -s ~/ib200_fasta/ht_3_4_a_MID80_dcd.fasta -s ~/ib200_fasta/ht_3_4_b_MID81_dcd.fasta -s ~/ib200_fasta/ht_3_4_c_ILL_8nt_53_dcd.fasta -s ~/ib200_fasta/ht_3_5_a_ILL_8nt_54_dcd.fasta -s ~/ib200_fasta/ht_3_5_b_ILL_8nt_55_dcd.fasta -s ~/ib200_fasta/ht_3_5_c_ILL_8nt_57_dcd.fasta -s ~/ib200_fasta/ht_3_6_a_ILL_9nt_39_dcd.fasta -s ~/ib200_fasta/ht_3_6_b_ILL_9nt_4_dcd.fasta -s ~/ib200_fasta/ht_3_6_c_ILL_9nt_40_dcd.fasta -s ~/ib200_fasta/ht_3_7_a_MID89_dcd.fasta -s ~/ib200_fasta/ht_3_7_b_MID90_dcd.fasta -s ~/ib200_fasta/ht_3_7_c_MID91_dcd.fasta -s ~/ib200_fasta/ht_3_8_a_MID92_dcd.fasta -s ~/ib200_fasta/ht_3_8_b_MID93_dcd.fasta -s ~/ib200_fasta/ht_3_8_c_ILL_8nt_67_dcd.fasta -s ~/ib200_fasta/ht_3_9_a_ILL_8nt_68_dcd.fasta -s ~/ib200_fasta/ht_3_9_b_ILL_8nt_69_dcd.fasta -s ~/ib200_fasta/ht_3_9_c_ILL_8nt_7_dcd.fasta -s ~/ib200_fasta/p_1_1_a_ILL_14nt_47_dcd.fasta -s ~/ib200_fasta/p_1_1_b_ILL_14nt_77_dcd.fasta -s ~/ib200_fasta/p_1_7_a_ILL_9nt_18_dcd.fasta -s ~/ib200_fasta/p_1_7_b_ILL_14nt_11_dcd.fasta -s ~/ib200_fasta/p_1_7_c_ILL_14nt_31_dcd.fasta -s ~/ib200_fasta/p_2_1_a_ILf_14nt_61_dcd.fasta -s ~/ib200_fasta/p_2_1_b_ILL_14nt_92_dcd.fasta -s ~/ib200_fasta/p_2_1_c_ILf_14nt_70_dcd.fasta -s ~/ib200_fasta/p_2_2_a_ILL_8nt_92_dcd.fasta -s ~/ib200_fasta/p_2_2_b_ILL_14nt_4_dcd.fasta -s ~/ib200_fasta/p_2_2_c_ILL_14nt_24_dcd.fasta -s ~/ib200_fasta/p_2_3_b_ILL_14nt_78_dcd.fasta -s ~/ib200_fasta/p_2_3_c_ILL_14nt_35_dcd.fasta -s ~/ib200_fasta/p_2_3_q_ILL_14nt_51_dcd.fasta -s ~/ib200_fasta/p_3_1_a_ILL_9nt_30_dcd.fasta -s ~/ib200_fasta/p_3_1_b_ILL_14nt_15_dcd.fasta -s ~/ib200_fasta/p_3_1_c_ILL_14nt_32_dcd.fasta -s ~/ib200_fasta/p_3_2_b_ILL_14nt_96_dcd.fasta -s ~/ib200_fasta/p_3_3_a_ILL_9nt_104_dcd.fasta -s ~/ib200_fasta/p_3_3_b_ILL_14nt_5_dcd.fasta -s ~/ib200_fasta/p_3_3_c_ILL_14nt_27_dcd.fasta -s ~/ib200_fasta/p_3_4_a_ILL_14nt_53_dcd.fasta -s ~/ib200_fasta/p_3_4_c_ILL_14nt_44_dcd.fasta -s ~/ib200_fasta/p_3_5_a_ILL_9nt_41_dcd.fasta -s ~/ib200_fasta/p_3_5_b_ILL_14nt_17_dcd.fasta -s ~/ib200_fasta/p_3_5_c_ILL_14nt_34_dcd.fasta -s ~/ib200_fasta/p_3_6_b_ILL_14nt_2_dcd.fasta -s ~/ib200_fasta/p_3_7_a_ILL_9nt_115_dcd.fasta -s ~/ib200_fasta/p_3_7_b_ILL_14nt_6_dcd.fasta -s ~/ib200_fasta/p_3_7_c_ILL_14nt_30_dcd.fasta -s ~/ib200_fasta/p_3_8_c_ILL_14nt_57_dcd.fasta -s ~/ib200_fasta/p_3_9_b_ILL_14nt_20_dcd.fasta -s ~/ib200_fasta/p_3_9_c_ILL_14nt_43_dcd.fasta -s ~/ib200_fasta/scani_transcriptome.fasta
+
+#move catalog to own batch 2 folder
+
+populations -b 2 -P ~/ib200_output/batch_2/ -M ~/tort_popmap_2_scani.txt -p 3 --phylip --phylip_var --fasta_strict
+
+#failed, can re-do later
+
+#######################################
+
+#####
+#batch 3, all samples plus both scani and pp
+denovo_map.pl -m 4 -M 0 -B jbaughman_ib200_2016_radtags -b 3 -t -D "catalog_scani_pp" -o ~/ib200_output/batch_3/ -s ~/ib200_fasta/ht_1_10_a_MID31_dcd.fasta -s ~/ib200_fasta/ht_1_10_b_MID32_dcd.fasta -s ~/ib200_fasta/ht_1_10_c_ILL_8nt_115_dcd.fasta -s ~/ib200_fasta/ht_1_11_a_ILL_8nt_116_dcd.fasta -s ~/ib200_fasta/ht_1_11_b_ILL_8nt_117_dcd.fasta -s ~/ib200_fasta/ht_1_11_c_ILL_8nt_118_dcd.fasta -s ~/ib200_fasta/ht_1_1_a_MID1_dcd.fasta -s ~/ib200_fasta/ht_1_1_b_MID2_dcd.fasta -s ~/ib200_fasta/ht_1_1_c_MID3_dcd.fasta -s ~/ib200_fasta/ht_1_2_a_MID4_dcd.fasta -s ~/ib200_fasta/ht_1_2_b_MID6_dcd.fasta -s ~/ib200_fasta/ht_1_2_c_ILL_10nt_59_dcd.fasta -s ~/ib200_fasta/ht_1_3_a_ILL_10nt_6_dcd.fasta -s ~/ib200_fasta/ht_1_3_b_ILL_10nt_60_dcd.fasta -s ~/ib200_fasta/ht_1_3_c_ILL_10nt_62_dcd.fasta -s ~/ib200_fasta/ht_1_4_a_ILL_8nt_78_dcd.fasta -s ~/ib200_fasta/ht_1_4_b_ILL_8nt_79_dcd.fasta -s ~/ib200_fasta/ht_1_4_c_ILL_8nt_8_dcd.fasta -s ~/ib200_fasta/ht_1_5_a_MID16_dcd.fasta -s ~/ib200_fasta/ht_1_5_b_MID17_dcd.fasta -s ~/ib200_fasta/ht_1_5_c_MID18_dcd.fasta -s ~/ib200_fasta/ht_1_6_a_MID19_dcd.fasta -s ~/ib200_fasta/ht_1_6_b_MID20_dcd.fasta -s ~/ib200_fasta/ht_1_6_c_ILL_8nt_103_dcd.fasta -s ~/ib200_fasta/ht_1_7_a_ILL_8nt_104_dcd.fasta -s ~/ib200_fasta/ht_1_7_b_ILL_8nt_106_dcd.fasta -s ~/ib200_fasta/ht_1_7_c_ILL_8nt_107_dcd.fasta -s ~/ib200_fasta/ht_1_8_a_ILL_8nt_89_dcd.fasta -s ~/ib200_fasta/ht_1_8_b_ILL_8nt_90_dcd.fasta -s ~/ib200_fasta/ht_1_8_c_ILL_8nt_91_dcd.fasta -s ~/ib200_fasta/ht_1_9_a_MID28_dcd.fasta -s ~/ib200_fasta/ht_1_9_b_MID29_dcd.fasta -s ~/ib200_fasta/ht_1_9_c_MID30_dcd.fasta -s ~/ib200_fasta/ht_2_10_a_MID65_dcd.fasta -s ~/ib200_fasta/ht_2_10_b_MID66_dcd.fasta -s ~/ib200_fasta/ht_2_10_c_MID67_dcd.fasta -s ~/ib200_fasta/ht_2_11_a_MID68_dcd.fasta -s ~/ib200_fasta/ht_2_11_b_MID69_dcd.fasta -s ~/ib200_fasta/ht_2_11_c_ILL_8nt_42_dcd.fasta -s ~/ib200_fasta/ht_2_1_a_ILL_9nt_101_dcd.fasta -s ~/ib200_fasta/ht_2_1_b_ILL_9nt_102_dcd.fasta -s ~/ib200_fasta/ht_2_1_c_ILL_9nt_103_dcd.fasta -s ~/ib200_fasta/ht_2_2_a_MID40_dcd.fasta -s ~/ib200_fasta/ht_2_2_b_MID41_dcd.fasta -s ~/ib200_fasta/ht_2_2_c_MID42_dcd.fasta -s ~/ib200_fasta/ht_2_3_a_MID43_dcd.fasta -s ~/ib200_fasta/ht_2_3_b_MID44_dcd.fasta -s ~/ib200_fasta/ht_2_3_c_ILL_8nt_18_dcd.fasta -s ~/ib200_fasta/ht_2_4_a_ILL_8nt_19_dcd.fasta -s ~/ib200_fasta/ht_2_4_b_ILL_8nt_2_dcd.fasta -s ~/ib200_fasta/ht_2_4_c_ILL_8nt_21_dcd.fasta -s ~/ib200_fasta/ht_2_5_a_ILL_9nt_112_dcd.fasta -s ~/ib200_fasta/ht_2_5_b_ILL_9nt_113_dcd.fasta -s ~/ib200_fasta/ht_2_6_a_MID53_dcd.fasta -s ~/ib200_fasta/ht_2_6_b_MID54_dcd.fasta -s ~/ib200_fasta/ht_2_6_c_MID55_dcd.fasta -s ~/ib200_fasta/ht_2_7_a_MID56_dcd.fasta -s ~/ib200_fasta/ht_2_7_b_MID57_dcd.fasta -s ~/ib200_fasta/ht_2_7_c_ILL_8nt_30_dcd.fasta -s ~/ib200_fasta/ht_2_8_a_ILL_8nt_31_dcd.fasta -s ~/ib200_fasta/ht_2_8_b_ILL_8nt_32_dcd.fasta -s ~/ib200_fasta/ht_2_8_c_ILL_8nt_33_dcd.fasta -s ~/ib200_fasta/ht_2_9_a_ILL_9nt_15_dcd.fasta -s ~/ib200_fasta/ht_2_9_b_ILL_9nt_16_dcd.fasta -s ~/ib200_fasta/ht_2_9_c_ILL_9nt_17_dcd.fasta -s ~/ib200_fasta/ht_3_10_a_ILL_9nt_5_dcd.fasta -s ~/ib200_fasta/ht_3_10_b_ILL_9nt_50_dcd.fasta -s ~/ib200_fasta/ht_3_10_c_ILL_9nt_51_dcd.fasta -s ~/ib200_fasta/ht_3_11_a_ILL_8nt_80_dcd.fasta -s ~/ib200_fasta/ht_3_11_b_ILL_14nt_1_dcd.fasta -s ~/ib200_fasta/ht_3_11_c_ILL_14nt_23_dcd.fasta -s ~/ib200_fasta/ht_3_1_a_ILL_8nt_43_dcd.fasta -s ~/ib200_fasta/ht_3_1_b_ILL_8nt_44_dcd.fasta -s ~/ib200_fasta/ht_3_1_c_ILL_8nt_45_dcd.fasta -s ~/ib200_fasta/ht_3_2_a_ILL_9nt_28_dcd.fasta -s ~/ib200_fasta/ht_3_2_b_ILL_9nt_29_dcd.fasta -s ~/ib200_fasta/ht_3_2_c_ILL_9nt_3_dcd.fasta -s ~/ib200_fasta/ht_3_3_a_MID77_dcd.fasta -s ~/ib200_fasta/ht_3_3_b_MID78_dcd.fasta -s ~/ib200_fasta/ht_3_3_c_MID79_dcd.fasta -s ~/ib200_fasta/ht_3_4_a_MID80_dcd.fasta -s ~/ib200_fasta/ht_3_4_b_MID81_dcd.fasta -s ~/ib200_fasta/ht_3_4_c_ILL_8nt_53_dcd.fasta -s ~/ib200_fasta/ht_3_5_a_ILL_8nt_54_dcd.fasta -s ~/ib200_fasta/ht_3_5_b_ILL_8nt_55_dcd.fasta -s ~/ib200_fasta/ht_3_5_c_ILL_8nt_57_dcd.fasta -s ~/ib200_fasta/ht_3_6_a_ILL_9nt_39_dcd.fasta -s ~/ib200_fasta/ht_3_6_b_ILL_9nt_4_dcd.fasta -s ~/ib200_fasta/ht_3_6_c_ILL_9nt_40_dcd.fasta -s ~/ib200_fasta/ht_3_7_a_MID89_dcd.fasta -s ~/ib200_fasta/ht_3_7_b_MID90_dcd.fasta -s ~/ib200_fasta/ht_3_7_c_MID91_dcd.fasta -s ~/ib200_fasta/ht_3_8_a_MID92_dcd.fasta -s ~/ib200_fasta/ht_3_8_b_MID93_dcd.fasta -s ~/ib200_fasta/ht_3_8_c_ILL_8nt_67_dcd.fasta -s ~/ib200_fasta/ht_3_9_a_ILL_8nt_68_dcd.fasta -s ~/ib200_fasta/ht_3_9_b_ILL_8nt_69_dcd.fasta -s ~/ib200_fasta/ht_3_9_c_ILL_8nt_7_dcd.fasta -s ~/ib200_fasta/p_1_1_a_ILL_14nt_47_dcd.fasta -s ~/ib200_fasta/p_1_1_b_ILL_14nt_77_dcd.fasta -s ~/ib200_fasta/p_1_7_a_ILL_9nt_18_dcd.fasta -s ~/ib200_fasta/p_1_7_b_ILL_14nt_11_dcd.fasta -s ~/ib200_fasta/p_1_7_c_ILL_14nt_31_dcd.fasta -s ~/ib200_fasta/p_2_1_a_ILf_14nt_61_dcd.fasta -s ~/ib200_fasta/p_2_1_b_ILL_14nt_92_dcd.fasta -s ~/ib200_fasta/p_2_1_c_ILf_14nt_70_dcd.fasta -s ~/ib200_fasta/p_2_2_a_ILL_8nt_92_dcd.fasta -s ~/ib200_fasta/p_2_2_b_ILL_14nt_4_dcd.fasta -s ~/ib200_fasta/p_2_2_c_ILL_14nt_24_dcd.fasta -s ~/ib200_fasta/p_2_3_b_ILL_14nt_78_dcd.fasta -s ~/ib200_fasta/p_2_3_c_ILL_14nt_35_dcd.fasta -s ~/ib200_fasta/p_2_3_q_ILL_14nt_51_dcd.fasta -s ~/ib200_fasta/p_3_1_a_ILL_9nt_30_dcd.fasta -s ~/ib200_fasta/p_3_1_b_ILL_14nt_15_dcd.fasta -s ~/ib200_fasta/p_3_1_c_ILL_14nt_32_dcd.fasta -s ~/ib200_fasta/p_3_2_b_ILL_14nt_96_dcd.fasta -s ~/ib200_fasta/p_3_3_a_ILL_9nt_104_dcd.fasta -s ~/ib200_fasta/p_3_3_b_ILL_14nt_5_dcd.fasta -s ~/ib200_fasta/p_3_3_c_ILL_14nt_27_dcd.fasta -s ~/ib200_fasta/p_3_4_a_ILL_14nt_53_dcd.fasta -s ~/ib200_fasta/p_3_4_c_ILL_14nt_44_dcd.fasta -s ~/ib200_fasta/p_3_5_a_ILL_9nt_41_dcd.fasta -s ~/ib200_fasta/p_3_5_b_ILL_14nt_17_dcd.fasta -s ~/ib200_fasta/p_3_5_c_ILL_14nt_34_dcd.fasta -s ~/ib200_fasta/p_3_6_b_ILL_14nt_2_dcd.fasta -s ~/ib200_fasta/p_3_7_a_ILL_9nt_115_dcd.fasta -s ~/ib200_fasta/p_3_7_b_ILL_14nt_6_dcd.fasta -s ~/ib200_fasta/p_3_7_c_ILL_14nt_30_dcd.fasta -s ~/ib200_fasta/p_3_8_c_ILL_14nt_57_dcd.fasta -s ~/ib200_fasta/p_3_9_b_ILL_14nt_20_dcd.fasta -s ~/ib200_fasta/p_3_9_c_ILL_14nt_43_dcd.fasta -s ~/ib200_fasta/scani_transcriptome.fasta -s ~/ib200_fasta/pp_ecori_80bp.fasta
+
+#move catalog to own batch 3 folder
+
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani_pp.txt -p 3 --phylip --phylip_var --fasta_strict
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani_pp.txt -p 4 --phylip --fasta_strict
+
+
+populations -b 3 -P ~/ib200_output/batch_3 -r 0.75 --phylip --fasta_strict
+
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani_pp.txt -p 3 --min_maf 0.01 --fasta_strict 
+
+batch_4
+denovo_map.pl -m 3 -M 0 -n 1 -B jbaughman_ib200_2016_radtags -b 4 -O ~/tort_popmap_2_scani_pp.txt -t -D "catalog_scani_pp" -o ~/ib200_output/batch_4/ -s ~/ib200_fasta/ht_1_10_a_MID31_dcd.fasta -s ~/ib200_fasta/ht_1_10_b_MID32_dcd.fasta -s ~/ib200_fasta/ht_1_10_c_ILL_8nt_115_dcd.fasta -s ~/ib200_fasta/ht_1_11_a_ILL_8nt_116_dcd.fasta -s ~/ib200_fasta/ht_1_11_b_ILL_8nt_117_dcd.fasta -s ~/ib200_fasta/ht_1_11_c_ILL_8nt_118_dcd.fasta -s ~/ib200_fasta/ht_1_1_a_MID1_dcd.fasta -s ~/ib200_fasta/ht_1_1_b_MID2_dcd.fasta -s ~/ib200_fasta/ht_1_1_c_MID3_dcd.fasta -s ~/ib200_fasta/ht_1_2_a_MID4_dcd.fasta -s ~/ib200_fasta/ht_1_2_b_MID6_dcd.fasta -s ~/ib200_fasta/ht_1_2_c_ILL_10nt_59_dcd.fasta -s ~/ib200_fasta/ht_1_3_a_ILL_10nt_6_dcd.fasta -s ~/ib200_fasta/ht_1_3_b_ILL_10nt_60_dcd.fasta -s ~/ib200_fasta/ht_1_3_c_ILL_10nt_62_dcd.fasta -s ~/ib200_fasta/ht_1_4_a_ILL_8nt_78_dcd.fasta -s ~/ib200_fasta/ht_1_4_b_ILL_8nt_79_dcd.fasta -s ~/ib200_fasta/ht_1_4_c_ILL_8nt_8_dcd.fasta -s ~/ib200_fasta/ht_1_5_a_MID16_dcd.fasta -s ~/ib200_fasta/ht_1_5_b_MID17_dcd.fasta -s ~/ib200_fasta/ht_1_5_c_MID18_dcd.fasta -s ~/ib200_fasta/ht_1_6_a_MID19_dcd.fasta -s ~/ib200_fasta/ht_1_6_b_MID20_dcd.fasta -s ~/ib200_fasta/ht_1_6_c_ILL_8nt_103_dcd.fasta -s ~/ib200_fasta/ht_1_7_a_ILL_8nt_104_dcd.fasta -s ~/ib200_fasta/ht_1_7_b_ILL_8nt_106_dcd.fasta -s ~/ib200_fasta/ht_1_7_c_ILL_8nt_107_dcd.fasta -s ~/ib200_fasta/ht_1_8_a_ILL_8nt_89_dcd.fasta -s ~/ib200_fasta/ht_1_8_b_ILL_8nt_90_dcd.fasta -s ~/ib200_fasta/ht_1_8_c_ILL_8nt_91_dcd.fasta -s ~/ib200_fasta/ht_1_9_a_MID28_dcd.fasta -s ~/ib200_fasta/ht_1_9_b_MID29_dcd.fasta -s ~/ib200_fasta/ht_1_9_c_MID30_dcd.fasta -s ~/ib200_fasta/ht_2_10_a_MID65_dcd.fasta -s ~/ib200_fasta/ht_2_10_b_MID66_dcd.fasta -s ~/ib200_fasta/ht_2_10_c_MID67_dcd.fasta -s ~/ib200_fasta/ht_2_11_a_MID68_dcd.fasta -s ~/ib200_fasta/ht_2_11_b_MID69_dcd.fasta -s ~/ib200_fasta/ht_2_11_c_ILL_8nt_42_dcd.fasta -s ~/ib200_fasta/ht_2_1_a_ILL_9nt_101_dcd.fasta -s ~/ib200_fasta/ht_2_1_b_ILL_9nt_102_dcd.fasta -s ~/ib200_fasta/ht_2_1_c_ILL_9nt_103_dcd.fasta -s ~/ib200_fasta/ht_2_2_a_MID40_dcd.fasta -s ~/ib200_fasta/ht_2_2_b_MID41_dcd.fasta -s ~/ib200_fasta/ht_2_2_c_MID42_dcd.fasta -s ~/ib200_fasta/ht_2_3_a_MID43_dcd.fasta -s ~/ib200_fasta/ht_2_3_b_MID44_dcd.fasta -s ~/ib200_fasta/ht_2_3_c_ILL_8nt_18_dcd.fasta -s ~/ib200_fasta/ht_2_4_a_ILL_8nt_19_dcd.fasta -s ~/ib200_fasta/ht_2_4_b_ILL_8nt_2_dcd.fasta -s ~/ib200_fasta/ht_2_4_c_ILL_8nt_21_dcd.fasta -s ~/ib200_fasta/ht_2_5_a_ILL_9nt_112_dcd.fasta -s ~/ib200_fasta/ht_2_5_b_ILL_9nt_113_dcd.fasta -s ~/ib200_fasta/ht_2_6_a_MID53_dcd.fasta -s ~/ib200_fasta/ht_2_6_b_MID54_dcd.fasta -s ~/ib200_fasta/ht_2_6_c_MID55_dcd.fasta -s ~/ib200_fasta/ht_2_7_a_MID56_dcd.fasta -s ~/ib200_fasta/ht_2_7_b_MID57_dcd.fasta -s ~/ib200_fasta/ht_2_7_c_ILL_8nt_30_dcd.fasta -s ~/ib200_fasta/ht_2_8_a_ILL_8nt_31_dcd.fasta -s ~/ib200_fasta/ht_2_8_b_ILL_8nt_32_dcd.fasta -s ~/ib200_fasta/ht_2_8_c_ILL_8nt_33_dcd.fasta -s ~/ib200_fasta/ht_2_9_a_ILL_9nt_15_dcd.fasta -s ~/ib200_fasta/ht_2_9_b_ILL_9nt_16_dcd.fasta -s ~/ib200_fasta/ht_2_9_c_ILL_9nt_17_dcd.fasta -s ~/ib200_fasta/ht_3_10_a_ILL_9nt_5_dcd.fasta -s ~/ib200_fasta/ht_3_10_b_ILL_9nt_50_dcd.fasta -s ~/ib200_fasta/ht_3_10_c_ILL_9nt_51_dcd.fasta -s ~/ib200_fasta/ht_3_11_a_ILL_8nt_80_dcd.fasta -s ~/ib200_fasta/ht_3_11_b_ILL_14nt_1_dcd.fasta -s ~/ib200_fasta/ht_3_11_c_ILL_14nt_23_dcd.fasta -s ~/ib200_fasta/ht_3_1_a_ILL_8nt_43_dcd.fasta -s ~/ib200_fasta/ht_3_1_b_ILL_8nt_44_dcd.fasta -s ~/ib200_fasta/ht_3_1_c_ILL_8nt_45_dcd.fasta -s ~/ib200_fasta/ht_3_2_a_ILL_9nt_28_dcd.fasta -s ~/ib200_fasta/ht_3_2_b_ILL_9nt_29_dcd.fasta -s ~/ib200_fasta/ht_3_2_c_ILL_9nt_3_dcd.fasta -s ~/ib200_fasta/ht_3_3_a_MID77_dcd.fasta -s ~/ib200_fasta/ht_3_3_b_MID78_dcd.fasta -s ~/ib200_fasta/ht_3_3_c_MID79_dcd.fasta -s ~/ib200_fasta/ht_3_4_a_MID80_dcd.fasta -s ~/ib200_fasta/ht_3_4_b_MID81_dcd.fasta -s ~/ib200_fasta/ht_3_4_c_ILL_8nt_53_dcd.fasta -s ~/ib200_fasta/ht_3_5_a_ILL_8nt_54_dcd.fasta -s ~/ib200_fasta/ht_3_5_b_ILL_8nt_55_dcd.fasta -s ~/ib200_fasta/ht_3_5_c_ILL_8nt_57_dcd.fasta -s ~/ib200_fasta/ht_3_6_a_ILL_9nt_39_dcd.fasta -s ~/ib200_fasta/ht_3_6_b_ILL_9nt_4_dcd.fasta -s ~/ib200_fasta/ht_3_6_c_ILL_9nt_40_dcd.fasta -s ~/ib200_fasta/ht_3_7_a_MID89_dcd.fasta -s ~/ib200_fasta/ht_3_7_b_MID90_dcd.fasta -s ~/ib200_fasta/ht_3_7_c_MID91_dcd.fasta -s ~/ib200_fasta/ht_3_8_a_MID92_dcd.fasta -s ~/ib200_fasta/ht_3_8_b_MID93_dcd.fasta -s ~/ib200_fasta/ht_3_8_c_ILL_8nt_67_dcd.fasta -s ~/ib200_fasta/ht_3_9_a_ILL_8nt_68_dcd.fasta -s ~/ib200_fasta/ht_3_9_b_ILL_8nt_69_dcd.fasta -s ~/ib200_fasta/ht_3_9_c_ILL_8nt_7_dcd.fasta -s ~/ib200_fasta/p_1_1_a_ILL_14nt_47_dcd.fasta -s ~/ib200_fasta/p_1_1_b_ILL_14nt_77_dcd.fasta -s ~/ib200_fasta/p_1_7_a_ILL_9nt_18_dcd.fasta -s ~/ib200_fasta/p_1_7_b_ILL_14nt_11_dcd.fasta -s ~/ib200_fasta/p_1_7_c_ILL_14nt_31_dcd.fasta -s ~/ib200_fasta/p_2_1_a_ILL_14nt_61_dcd.fasta -s ~/ib200_fasta/p_2_1_b_ILL_14nt_92_dcd.fasta -s ~/ib200_fasta/p_2_1_c_ILL_14nt_70_dcd.fasta -s ~/ib200_fasta/p_2_2_a_ILL_8nt_92_dcd.fasta -s ~/ib200_fasta/p_2_2_b_ILL_14nt_4_dcd.fasta -s ~/ib200_fasta/p_2_2_c_ILL_14nt_24_dcd.fasta -s ~/ib200_fasta/p_2_3_b_ILL_14nt_78_dcd.fasta -s ~/ib200_fasta/p_2_3_c_ILL_14nt_35_dcd.fasta -s ~/ib200_fasta/p_2_3_q_ILL_14nt_51_dcd.fasta -s ~/ib200_fasta/p_3_1_a_ILL_9nt_30_dcd.fasta -s ~/ib200_fasta/p_3_1_b_ILL_14nt_15_dcd.fasta -s ~/ib200_fasta/p_3_1_c_ILL_14nt_32_dcd.fasta -s ~/ib200_fasta/p_3_2_b_ILL_14nt_96_dcd.fasta -s ~/ib200_fasta/p_3_3_a_ILL_9nt_104_dcd.fasta -s ~/ib200_fasta/p_3_3_b_ILL_14nt_5_dcd.fasta -s ~/ib200_fasta/p_3_3_c_ILL_14nt_27_dcd.fasta -s ~/ib200_fasta/p_3_4_a_ILL_14nt_53_dcd.fasta -s ~/ib200_fasta/p_3_4_c_ILL_14nt_44_dcd.fasta -s ~/ib200_fasta/p_3_5_a_ILL_9nt_41_dcd.fasta -s ~/ib200_fasta/p_3_5_b_ILL_14nt_17_dcd.fasta -s ~/ib200_fasta/p_3_5_c_ILL_14nt_34_dcd.fasta -s ~/ib200_fasta/p_3_6_b_ILL_14nt_2_dcd.fasta -s ~/ib200_fasta/p_3_7_a_ILL_9nt_115_dcd.fasta -s ~/ib200_fasta/p_3_7_b_ILL_14nt_6_dcd.fasta -s ~/ib200_fasta/p_3_7_c_ILL_14nt_30_dcd.fasta -s ~/ib200_fasta/p_3_8_c_ILL_14nt_57_dcd.fasta -s ~/ib200_fasta/p_3_9_b_ILL_14nt_20_dcd.fasta -s ~/ib200_fasta/p_3_9_c_ILL_14nt_43_dcd.fasta -s ~/ib200_fasta/scani_transcriptome.fasta -s ~/ib200_fasta/pp_ecori_80bp.fasta
+
+
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani.txt -p 3 --min_maf 0.01 --fasta_strict 
+
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani.txt -W ~/whitelist_4_25_16.txt -p 3 --min_maf 0.01 --fasta_strict 
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani.txt -W ~/whitelist_4_25_16.txt -p 3 --min_maf 0.01 --fasta_strict --verbose
+
+
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani.txt -W ~/whitelist_4_25_16.txt -p 3 --fasta_strict 
+
+
+
+| grab -p "xxxx"| 
+read_fasta -i /Users/jennabaughman/ib200_output/batch_3/50loci_3of3pops_whitelist_minmaf01/50loci_batch_3.strict.fa | grab -p "Allele_0"| write_fasta --data_out=/Users/jennabaughman/ib200_output/batch_3/50loci_3of3pops_whitelist_minmaf01/50loci_hap.fa --no_stream
+read_fasta -i ~/ib200_output/batch_3/50loci_3of3pops_whitelist_minmaf01/50loci_test_hp.fa | create_seq_index -d my_dir -i my_index 
+
+
+
+get_seq -i my_dir/my_index -s .*/[scani_transcriptome]
+
+grep ">" /Users/jennabaughman/final/1721.txt > 172
+
+~/ib200_output/batch_3/50loci_3of3pops_whitelist_minmaf01/50loci_test_hp.fa
+
+
+
+
+populations -b 3 -P ~/ib200_output/batch_3 -W ~/whitelist_4_25_16.txt  --genomic
+
+ 
+genotypes -b 3 -P ~/ib200_output/batch_3 -W ~/whitelist_4_25_16.txt 
+export_sql.pl -b 3 
+	
+
+
+
+
+
+
+
+
+******************************** 5/3/16
+
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani.txt -W ~/whitelist_4_25_16.txt -p 3 --fasta_strict 
+
+
+read_fasta -i /Users/jennabaughman/ib200_output/batch_3/50loci_3of3pops_5_3_16/50loci_5_3_16.fa | grab -p "Allele_0"| write_fasta --data_out=/Users/jennabaughman/ib200_output/batch_3/50loci_3of3pops_5_3_16/50loci_5_3_16_haploid.fa --no_stream
+
+
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani.txt -W ~/whitelist_5_3_16.txt -p 3 --fasta_strict 
+
+mkdir /Users/jennabaughman/ib200_output/batch_3/45loci_3of3pops_5_3_16
+
+cp /Users/jennabaughman/ib200_output/batch_3/45loci_3of3pops_5_3_16/batch_3.strict.fa /Users/jennabaughman/ib200_output/batch_3/45loci_3of3pops_5_3_16/45loci_5_3_16.fa
+
+read_fasta -i /Users/jennabaughman/ib200_output/batch_3/45loci_3of3pops_5_3_16/45loci_5_3_16.fa | grab -p "Allele_0"| write_fasta --data_out=/Users/jennabaughman/ib200_output/batch_3/45loci_3of3pops_5_3_16/45loci_5_3_16_haploid.fa --no_stream
+
+
+#all snps in at least 2 individuals
+
+#cleaned up fasta headers to format:
+#>CLocus_<locus number>_Sample_<unique sample identifier>
+
+
+#parsing fasta file /Users/jennabaughman/ib200_output/batch_3/45loci_3of3pops_5_3_16/45loci_5_3_16_haploid.fa
+
+cd /Users/jennabaughman/ib200_output/batch_3/45loci_5_3_16_haploid.fa
+
+#45loci_5_3_16_haploid.fa
+
+python
+
+
+fasta = open("45loci_5_3_16_haploid.fa")
+name = None
+for line in fasta:
+	if line[0]=='>':
+		name = line[1:]
+		seqs[name] = ''
+	else:
+		seqs[name] = seqs[name] + line
+
+
+
+
+f = open("45loci_5_3_16_haploid.fa")
+name = None
+for line in f:
+	line = line.rstrip(/n)
+	if line[0]=='>':
+		name = line[1:] #discarding >
+		seqs[name] = ''
+	else:
+		seqs[name] = seqs[name] + line
+
+
+fasta = open("45loci_5_3_16_haploid.fa")
+name = None
+for line in fasta:
+	if line[0]=='>':
+		name = line[1:]
+	
+
+
+
+***problems to be solved:
+
+for each "name", need to make a 
+
+>Locus_<locus>_Sample_<id>
+where <locus> is a 2-digit number from 01 to 45 and <id> is a string
+
+for each id, gather sequences
+append sequences in order 01 to 45
+if locus is missing, add a string of 80 N characters
+make new file in which each header is <id> and each sequence is 45x80 digits long and reqpresents each sequence from 01 to 45
+
+
+
+
+class FastaRecord(object):
+    def __init__(self, title, sequence):
+        self.title = title
+        self.sequence = sequence
+
+input_file = open("45loci_5_3_16_haploid.fa")
+for rec in read_fasta_records("45loci_5_3_16_haploid.fa"):
+  print(rec.title)
+
+
+
+def read_fasta_records("45loci_5_3_16_haploid.fa"):
+    records = []
+    while 1:
+        record = read_fasta_record("45loci_5_3_16_haploid.fa")
+        if record is None:
+            break
+        records.append(record)
+    return records
+
+
+
+# Read the sequence lines up to the blank line.
+sequence_lines = []
+while 1:
+    line = infile.readline().rstrip()
+    if line == "":
+        # Reached the end of the record or end of the file
+        break
+    sequence_lines.append(line)
+
+# Merge the lines together to make a single string containing the sequence
+# (This is faster than doing "sequence = sequence + line" if there are
+# more than a few lines)
+sequence = "".join(sequence_lines)
+
+
+
+
+
+
+POPULATIONS FOR 2 POPS
+
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani.txt r 0.75 --min_maf 0.01 -B ~/whitelist_5_3_16.txt -p 2 --fasta_strict 
+
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani.txt --max_obs_het 0 r 1 --min_maf 0.1 -B ~/whitelist_5_3_16.txt -p 2 --fasta_strict 
+
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani.txt -W ~/newwhitelist.txt -p 2 --fasta_strict 
+#whitelist taken from previous filters and present in at least 80 individuals (after inplausible loci filter)
+
+
+read_fasta -i /Users/jennabaughman/ib200_output/batch_3/30k_minmaf10_100_2_of_3_pops/30k_minmaf10_100_2_of_3_pops.strict.fa | grab -p "Allele_0"| write_fasta --data_out=/Users/jennabaughman/ib200_output/batch_3/30k_minmaf10_100_2_of_3_pops/30k_minmaf10_100_2_of_3_pops_hap.strict.fa --no_stream
+
+read_fasta -i /Users/jennabaughman/ib200_output/batch_3/1k_newwhitelist/1k_newwhitelist.strict.fa | grab -p "Allele_0"| write_fasta --data_out=/Users/jennabaughman/ib200_output/batch_3/1k_newwhitelist/1k_newwhitelist.strict_hap.fa --no_stream
+
+
+
+
+#note: still need to blast 45 to transcriptome annotations or to physco
+
+
+
+# didn't use
+BIOSEQ
+
+from Bio import SeqIO
+file1k = open("1k_newwhitelist.strict_hap.fa", "rU")
+records1k = list(SeqIO.parse(file1k, "fasta"))
+
+print(records1k[0].id)  # first record
+print(records1k[-1].id)  # last record
+
+
+for record.id in SeqIO.parse(open("1k_newwhitelist.strict_hap.fa", "rU"), "fasta") :
+
+from Bio import SeqIO
+file1k = open("1k_newwhitelist.strict_hap.fa", "rU")
+records1k = list(SeqIO.parse(file1k, "fasta"))
+each = []
+for record.id in SeqIO.parse(open("1k_newwhitelist.strict_hap.fa", "rU"), "fasta") :
+	each.append(record)
+	id_handle = open("id.fasta", "w")
+	SeqIO.write(each, id_handle, "fasta")
+	
+	
+locifile = file('loci.txt')
+
+c = 0
+
+	
+infile = file('1k_newwhitelist.strict_hap.fa')
+for locus in SeqIO.parse(infile,"fasta"):
+	print locus.name
+	for line in SeqIO.parse(infile,"fasta"):
+		print line.seq
+
+infile = file('1k_newwhitelist.strict_hap.fa')
+for record in SeqIO.parse(infile, "fasta"):
+	print record.id
+	print record.seq
+	
+	
+	
+	
+from Bio import SeqIO
+file1k = open("1k_newwhitelist.strict_hap.fa", "rU")
+records1k = SeqIO.parse(file1k, "fasta")
+
+for records1k.id in records1k:
+	SeqIO.write(records1k, "test.fasta", "fasta")
+	
+	
+	
+records = ...
+SeqIO.write(records, "example.faa", "fasta")
+	
+print(records1k[0].id)  # first record
+print(records1k[-1].id)  # last record
+
+
+
+# didn't use
+Let’s say the list of IDs is in a simple text file, as the first word on each line. This could be a tabular file where the first column is the ID. Try something like this:
+
+from Bio import SeqIO
+
+input_file = "1k_newwhitelist.strict_hap.fa"
+id_file = "loci.txt"
+for each_id in id_file:
+	print
+	
+	
+	
+	
+	
+	
+	
+
+
+# didn't use
+wanted = set(line.rstrip("\n") for line in open(id_file))
+
+
+
+
+
+
+
+
+
+
+
+	records = (r for r in SeqIO.parse(input_file, "fasta") if r.id in wanted)
+	
+	
+	wanted = set(line.rstrip("\n").split(None,1)[0] for line in open(id_file))
+	
+	count = SeqIO.write(records, output_file, "fasta")
+	
+	
+	
+	print("Saved %i records from %s to %s" % (count, input_file, output_file))
+	if count < len(wanted):
+		print("Warning %i IDs not found in %s" % (len(wanted)-count, input_file))
+
+
+
+# didn't use
+
+input_file = "1k_newwhitelist.strict_hap.fa"
+id_file = "loci.txt"
+for each_id in id_file:
+output_file = "locus.fasta"
+wanted = set(line.rstrip("\n").split(None,1)[0] for line in open(id_file))
+print("Found %i unique identifiers in %s" % (len(wanted), id_file))
+records = (r for r in SeqIO.parse(input_file, "fasta") if r.id in wanted)
+count = SeqIO.write(records, output_file, "fasta")
+print("Saved %i records from %s to %s" % (count, input_file, output_file))
+if count < len(wanted):
+	print("Warning %i IDs not found in %s" % (len(wanted)-count, input_file))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# didn't use
+
+for seq_record.id in SeqIO.parse("1k_newwhitelist.strict_hap.fa", "fasta"):
+	record = seq_record
+	SeqIO.write(record, "example.faa", "fasta")
+
+
+
+records = list(SeqIO.parse("1k_newwhitelist.strict_hap.fa", "fasta"))
+
+print("Found %i records" % len(records))
+
+print("The last record")
+last_record = records[-1] #using Python's list tricks
+print(last_record.id)
+print(repr(last_record.seq))
+print(len(last_record))
+
+SeqIO.write(last_record.id, "example.faa", "fasta")
+
+
+with open ("1k_newwhitelist.strict_hap.fa") as file_handle:
+	print(sum(len(r) for r in SeqIO.parse(file_handle, "fasta")))
+	
+	
+	
+	
+	
+	
+finally used split_fasta_id.py
+
+need to remove locus # from each header of each file
+
+sed -i '' 's/>.*Sample/>Sample/g' *.fasta  #within directory of files
+
+#now need to make sequence matrix
+used SequenceMatrix
+
+
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani.txt -W ~/newwhitelist.txt -p 2 --genepop
+#whitelist taken from previous filters and present in at least 80 individuals (after inplausible loci filter)
+
+#Running populations again for genepop format and clone analysis using Genodive
+# threshold 0 genetic distance 84 clones ignore missing data
+threshold 1 73 clones 2 66 clones 3 61 4 55 5 47 6 46 7 
+
+
+populations -b 3 -P ~/ib200_output/batch_3 -M ~/tort_popmap_2_scani.txt -W ~/newwhitelist.txt -p 2 --genepop --plink --vcf --pylip
+
+
+
+treemix -i ib200/infile_all3only_1s.txt.gz -m 1 -noss -o ib200/22_m1/22_m1 -root outgroup
+treemix -i ib200/infile_all3only_1s.txt.gz -m 2 -noss -o ib200/22_m2/22_m2 -root outgroup
+treemix -i ib200/infile_all3only_1s.txt.gz -m 3 -noss -o ib200/22_m3/22_m3 -root outgroup
+treemix -i ib200/infile_all3only_1s.txt.gz -m 4 -noss -o ib200/22_m4/22_m4 -root outgroup
+treemix -i ib200/infile_all3only_1s.txt.gz -m 5 -noss -o ib200/22_m5/22_m5 -root outgroup
+treemix -i ib200/infile_all3only_1s.txt.gz -m 6 -noss -o ib200/22_m6/22_m6 -root outgroup
+
+
+treemix -i ib200/infile_ib200.txt.gz -m 1 -noss -o ib200/all_m1/all_m1 -root outgroup
+treemix -i ib200/infile_ib200.txt.gz -m 2 -noss -o ib200/all_m2/all_m2 -root outgroup
+treemix -i ib200/infile_ib200.txt.gz -m 3 -noss -o ib200/all_m3/all_m3 -root outgroup
+treemix -i ib200/infile_ib200.txt.gz -m 4 -noss -o ib200/all_m4/all_m4 -root outgroup
+treemix -i ib200/infile_ib200.txt.gz -m 5 -noss -o ib200/all_m5/all_m5 -root outgroup
+treemix -i ib200/infile_ib200.txt.gz -m 6 -noss -o ib200/all_m6/all_m6 -root outgroup
+
+
+
+
+
+#need to take out just the scani_transcriptome loci to blast to physco or transcriptome annotations??
+
+read_fasta -i /Users/jennabaughman/ib200_output/batch_3/1k_newwhitelist/1k_newwhitelist.strict_hap.fa | grab -p "scani_transcriptome"| write_fasta --data_out=/Users/jennabaughman/Documents/berkeley/spring_2016/ib_200/project/scani_rad_loci1.fasta --no_stream
+
+read_fasta -i /Users/jennabaughman/ib200_output/batch_3/45loci_3of3pops_5_3_16/45loci_5_3_16_haploid.fa | grab -p "scani_transcriptome"| write_fasta --data_out=/Users/jennabaughman/Documents/berkeley/spring_2016/ib_200/project/scani_rad_loci2.fasta --no_stream
+
